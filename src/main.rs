@@ -1,20 +1,24 @@
-use std::io::BufRead;
+use std::io::{stdin, stdout, BufRead, Write};
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 
-fn main() {
+fn main() -> std::io::Result<()> {
     let mut set = HashMap::new();
 
     // for each lines of stdin
-    for line in std::io::stdin().lock().lines() {
-        let line = line.unwrap();
+    let mut stdout = stdout().lock();
+    for line in stdin().lock().lines() {
+        let line = line?;
 
         match set.entry(line) {
             Entry::Occupied(_) => continue,
             Entry::Vacant(e) => {
-                println!("{}", e.key());
+                stdout.write_all(e.key().as_bytes())?;
+                stdout.write_all(b"\n")?;
                 e.insert(());
             }
         }
     }
+
+    Ok(())
 }
