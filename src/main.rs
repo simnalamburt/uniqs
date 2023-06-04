@@ -1,12 +1,39 @@
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
-use std::io::{stdin, stdout, BufRead, Result, Write};
+use std::fs::File;
+use std::io::{stdin, stdout, BufRead, BufReader, Result, Write};
 
-fn main() -> Result<()> {
-    program(stdin().lock(), stdout().lock())
+use clap::Parser;
+
+/// uniq(1) alternative with streaming support
+#[derive(Parser, Debug)]
+#[command(version, author)]
+struct Args {
+    /// Path of the input file (default: stdin)
+    input: Option<String>,
+    /// Path of the output file (default: stdout)
+    output: Option<String>,
 }
 
-fn program<R: BufRead, W: Write>(input: R, mut output: W) -> std::io::Result<()> {
+fn main() -> Result<()> {
+    let args = Args::parse();
+
+    let mut input: Box<dyn BufRead> = if let Some(path) = args.input {
+        Box::new(BufReader::new(File::open(path)?))
+    } else {
+        Box::new(stdin().lock())
+    };
+
+    let mut output: Box<dyn Write> = if let Some(path) = args.output {
+        Box::new(File::create(path)?)
+    } else {
+        Box::new(stdout().lock())
+    };
+
+    program(&mut input, &mut output)
+}
+
+fn program(input: &mut dyn BufRead, output: &mut dyn Write) -> std::io::Result<()> {
     let mut set = HashMap::new();
 
     for line in input.lines() {
@@ -29,9 +56,9 @@ fn program<R: BufRead, W: Write>(input: R, mut output: W) -> std::io::Result<()>
 mod tests {
     use crate::program;
 
-    fn test(input: &[u8], expected: &[u8]) {
+    fn test(mut input: &[u8], expected: &[u8]) {
         let mut actual = Vec::new();
-        program(&input[..], &mut actual).unwrap();
+        program(&mut input, &mut actual).unwrap();
         assert_eq!(actual, expected);
     }
 
