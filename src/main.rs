@@ -10,7 +10,7 @@ use clap::Parser;
 /// The uniqs utility reads the specified INPUT, and writes only the unique lines that appear in it
 /// to OUTPUT. It ignores lines that have already appeared before. If INPUT is a single dash ('-')
 /// or absent, standard input is read. If OUTPUT is absent, the standard output is used for output.
-#[derive(Parser, Debug)]
+#[derive(Parser)]
 #[command(version, author)]
 struct Args {
     /// Path of the input file (default: stdin)
