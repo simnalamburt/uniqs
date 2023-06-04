@@ -87,7 +87,7 @@ ccc
     }
 
     #[test]
-    fn test_add() {
+    fn test_abcabc() {
         test(
             b"\
 a
