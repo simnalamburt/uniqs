@@ -1,5 +1,4 @@
-use std::collections::hash_map::Entry;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::io::{stdin, stdout, BufRead, BufReader, Result, Write};
 
@@ -13,6 +12,10 @@ use clap::Parser;
 #[derive(Parser)]
 #[command(version, author)]
 struct Args {
+    /// Prefix lines by the number of occurrences
+    #[arg(short, long)]
+    count: bool,
+
     /// Path of the input file (default: stdin)
     input: Option<String>,
     /// Path of the output file (default: stdout)
@@ -32,16 +35,19 @@ fn main() -> Result<()> {
         _ => Box::new(stdout().lock()),
     };
 
-    program(&mut input, &mut output)
+    if args.count {
+        count(&mut input, &mut output)
+    } else {
+        program(&mut input, &mut output)
+    }
 }
 
-fn program(input: &mut dyn BufRead, output: &mut dyn Write) -> std::io::Result<()> {
+fn program(input: &mut dyn BufRead, output: &mut dyn Write) -> Result<()> {
     let mut set = HashMap::new();
 
     for line in input.lines() {
-        let line = line?;
-
-        match set.entry(line) {
+        use std::collections::hash_map::Entry;
+        match set.entry(line?) {
             Entry::Occupied(_) => continue,
             Entry::Vacant(e) => {
                 output.write_all(e.key().as_bytes())?;
@@ -54,19 +60,41 @@ fn program(input: &mut dyn BufRead, output: &mut dyn Write) -> std::io::Result<(
     Ok(())
 }
 
+fn count(input: &mut dyn BufRead, output: &mut dyn Write) -> Result<()> {
+    let mut set = BTreeMap::new();
+
+    for line in input.lines() {
+        use std::collections::btree_map::Entry;
+        match set.entry(line?) {
+            Entry::Occupied(mut e) => {
+                *e.get_mut() += 1u64;
+            }
+            Entry::Vacant(e) => {
+                e.insert(1u64);
+            }
+        }
+    }
+
+    for (line, count) in set {
+        writeln!(output, "{count:>7} {line}")?;
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::program;
+    use crate::{count, program};
 
-    fn test(mut input: &[u8], expected: &[u8]) {
+    fn t(mut input: &[u8], expected: &str) {
         let mut actual = Vec::new();
         program(&mut input, &mut actual).unwrap();
-        assert_eq!(actual, expected);
+        assert_eq!(String::from_utf8(actual).unwrap(), expected);
     }
 
     #[test]
     fn test_abc() {
-        test(
+        t(
             b"\
 aaa
 aaa
@@ -78,7 +106,7 @@ ccc
 ccc
 ccc
 ",
-            b"\
+            "\
 aaa
 bbb
 ccc
@@ -88,7 +116,7 @@ ccc
 
     #[test]
     fn test_abcabc() {
-        test(
+        t(
             b"\
 a
 b
@@ -100,11 +128,41 @@ a
 b
 c
 ",
-            b"\
+            "\
 a
 b
 c
 ",
+        )
+    }
+
+    fn c(mut input: &[u8], expected: &str) {
+        let mut actual = Vec::new();
+        count(&mut input, &mut actual).unwrap();
+        assert_eq!(String::from_utf8(actual).unwrap(), expected);
+    }
+
+    #[test]
+    fn test_count() {
+        c(
+            b"\
+a
+a
+a
+b
+b
+c
+c
+a
+a
+b
+b
+c
+",
+            r#"      5 a
+      4 b
+      3 c
+"#,
         )
     }
 }
