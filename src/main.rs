@@ -6,6 +6,10 @@ use std::io::{stdin, stdout, BufRead, BufReader, Result, Write};
 use clap::Parser;
 
 /// uniq(1) alternative with streaming support
+///
+/// The uniqs utility reads the specified INPUT, and writes only the unique lines that appear in it
+/// to OUTPUT. It ignores lines that have already appeared before. If INPUT is a single dash ('-')
+/// or absent, standard input is read. If OUTPUT is absent, the standard output is used for output.
 #[derive(Parser, Debug)]
 #[command(version, author)]
 struct Args {
@@ -18,16 +22,14 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    let mut input: Box<dyn BufRead> = if let Some(path) = args.input {
-        Box::new(BufReader::new(File::open(path)?))
-    } else {
-        Box::new(stdin().lock())
+    let mut input: Box<dyn BufRead> = match args.input {
+        Some(path) if path != "-" => Box::new(BufReader::new(File::open(path)?)),
+        _ => Box::new(stdin().lock()),
     };
 
-    let mut output: Box<dyn Write> = if let Some(path) = args.output {
-        Box::new(File::create(path)?)
-    } else {
-        Box::new(stdout().lock())
+    let mut output: Box<dyn Write> = match args.output {
+        Some(path) => Box::new(File::create(path)?),
+        _ => Box::new(stdout().lock()),
     };
 
     program(&mut input, &mut output)
