@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
-use std::io::{stdin, stdout, BufRead, BufReader, Result, Write};
+use std::io::{stdin, stdout, BufRead, BufReader, IsTerminal, Result, Write};
 
 use clap::Parser;
 
@@ -30,15 +30,17 @@ fn main() -> Result<()> {
         _ => Box::new(stdin().lock()),
     };
 
-    let mut output: Box<dyn Write> = match args.output {
+    trait WriteAndIsTerminal: Write + IsTerminal {}
+    impl<T: Write + IsTerminal> WriteAndIsTerminal for T {}
+    let mut output: Box<dyn WriteAndIsTerminal> = match args.output {
         Some(path) => Box::new(File::create(path)?),
         _ => Box::new(stdout().lock()),
     };
 
-    if args.count {
-        count(&mut input, &mut output)
-    } else {
-        program(&mut input, &mut output)
+    match (args.count, output.is_terminal()) {
+        (false, _) => program(&mut input, &mut output),
+        (true, true) => count_interactive(&mut input, &mut output),
+        (true, false) => count(&mut input, &mut output),
     }
 }
 
@@ -58,6 +60,11 @@ fn program(input: &mut dyn BufRead, output: &mut dyn Write) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn count_interactive(input: &mut dyn BufRead, output: &mut dyn Write) -> Result<()> {
+    // TODO
+    count(input, output)
 }
 
 fn count(input: &mut dyn BufRead, output: &mut dyn Write) -> Result<()> {
