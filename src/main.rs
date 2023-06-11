@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{stdin, stdout, BufRead, BufReader, IsTerminal, Result, Write};
 
@@ -116,11 +116,12 @@ fn count_interactive(input: &mut dyn BufRead, output: &mut dyn Write) -> Result<
 }
 
 fn count(input: &mut dyn BufRead, output: &mut dyn Write) -> Result<()> {
-    let mut set = BTreeMap::new();
+    // line -> count of occurrences
+    let mut map = IndexMap::new();
 
     for line in input.lines() {
-        use std::collections::btree_map::Entry;
-        match set.entry(line?) {
+        use indexmap::map::Entry;
+        match map.entry(line?) {
             Entry::Occupied(mut e) => {
                 *e.get_mut() += 1u64;
             }
@@ -130,7 +131,7 @@ fn count(input: &mut dyn BufRead, output: &mut dyn Write) -> Result<()> {
         }
     }
 
-    for (line, count) in set {
+    for (line, count) in map {
         writeln!(output, "{count:>7} {line}")?;
     }
 
