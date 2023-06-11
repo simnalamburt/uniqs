@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io::{stdin, stdout, BufRead, BufReader, IsTerminal, Result, Write};
 
 use clap::Parser;
+use indexmap::IndexMap;
 
 /// uniq(1) alternative with streaming support
 ///
@@ -85,34 +86,29 @@ fn count_interactive(input: &mut dyn BufRead, output: &mut dyn Write) -> Result<
         Ok(())
     };
 
-    // id == order of appearance == row number on the screen
-    // index : line -> id
-    let mut index = HashMap::new();
-    // table : id -> (count of occurrences, line)
-    let mut table = Vec::new();
+    // line -> count of occurrences
+    let mut map = IndexMap::new();
 
     for line in input.lines() {
-        use std::collections::hash_map::Entry;
-        match index.entry(line?) {
+        use indexmap::map::Entry;
+        match map.entry(line?) {
             Entry::Vacant(e) => {
-                let id = table.len();
-                print(id, 1, e.key())?;
+                print(e.index(), 1, e.key())?;
 
-                table.push((1u64, e.key().clone())); // TODO: clone
-                e.insert(id);
+                e.insert(1);
             }
-            Entry::Occupied(e) => {
-                let id = *e.get();
-                let (ref mut count, ref line) = table[id];
-                *count += 1;
+            Entry::Occupied(mut e) => {
+                let slot = e.get_mut();
+                let count = *slot + 1;
+                *slot = count;
 
-                print(id, *count, &line)?;
+                print(e.index(), count, e.key())?;
             }
         }
     }
 
     output.queue(LeaveAlternateScreen)?;
-    for (count, line) in table {
+    for (line, count) in map {
         writeln!(output, "{count:>7} {line}")?;
     }
 
