@@ -63,8 +63,60 @@ fn program(input: &mut dyn BufRead, output: &mut dyn Write) -> Result<()> {
 }
 
 fn count_interactive(input: &mut dyn BufRead, output: &mut dyn Write) -> Result<()> {
-    // TODO
-    count(input, output)
+    use crossterm::{
+        cursor::MoveTo,
+        style::Print,
+        terminal::{size, DisableLineWrap, EnterAlternateScreen, LeaveAlternateScreen},
+        QueueableCommand,
+    };
+
+    output.queue(EnterAlternateScreen)?.queue(DisableLineWrap)?;
+
+    let mut print = |row: usize, count: u64, key: &str| -> Result<()> {
+        // Do nothing if screen is not big enough for this print()
+        if row >= size()?.1 as usize {
+            return Ok(());
+        }
+
+        output
+            .queue(MoveTo(0, row as u16))?
+            .queue(Print(format!("{:>7} {}", count, key)))?;
+        output.flush()?;
+        Ok(())
+    };
+
+    // id == order of appearance == row number on the screen
+    // index : line -> id
+    let mut index = HashMap::new();
+    // table : id -> (count of occurrences, line)
+    let mut table = Vec::new();
+
+    for line in input.lines() {
+        use std::collections::hash_map::Entry;
+        match index.entry(line?) {
+            Entry::Vacant(e) => {
+                let id = table.len();
+                print(id, 1, e.key())?;
+
+                table.push((1u64, e.key().clone())); // TODO: clone
+                e.insert(id);
+            }
+            Entry::Occupied(e) => {
+                let id = *e.get();
+                let (ref mut count, ref line) = table[id];
+                *count += 1;
+
+                print(id, *count, &line)?;
+            }
+        }
+    }
+
+    output.queue(LeaveAlternateScreen)?;
+    for (count, line) in table {
+        writeln!(output, "{count:>7} {line}")?;
+    }
+
+    Ok(())
 }
 
 fn count(input: &mut dyn BufRead, output: &mut dyn Write) -> Result<()> {
