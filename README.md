@@ -1,6 +1,6 @@
 uniqs
 ========
-[`uniq`] alternative with streaming support.
+[`uniq(1)`] alternative with streaming support.
 
 ```console
 $ uniq -h
@@ -17,6 +17,12 @@ Options:
   -h, --help     Print help (see more with '--help')
   -V, --version  Print version
 ```
+
+### Comparison with [`uniq(1)`]
+`... \| sort \| uniq` | `... \| uniqs` | `... \| uniqs -c`
+--------------|---------|------------
+![Video of the results when using sort-then-uniq](https://i.hyeon.me/uniqs/sort-then-uniq.avif) | ![Video of the results when using uniqs](https://i.hyeon.me/uniqs/uniqs.avif) | ![Video of the results when using uniqs with a count option](https://i.hyeon.me/uniqs/uniqs-c.avif)
+
 
 ### Installation
 Using Homebrew in macOS:
@@ -35,7 +41,7 @@ cargo install uniqs
 *uniqs* is primarily distributed under the terms of both the [Apache License
 (Version 2.0)] and the [MIT license]. See [COPYRIGHT] for details.
 
-[`uniq`]: https://www.gnu.org/software/coreutils/manual/html_node/uniq-invocation.html
+[`uniq(1)`]: https://www.gnu.org/software/coreutils/manual/html_node/uniq-invocation.html
 [MIT license]: LICENSE-MIT
 [Apache License (Version 2.0)]: LICENSE-APACHE
 [COPYRIGHT]: COPYRIGHT
