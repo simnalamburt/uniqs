@@ -18,6 +18,17 @@ Options:
   -V, --version  Print version
 ```
 
+### Installation
+Using Homebrew in macOS:
+```bash
+brew install simnalamburt/x/uniqs
+```
+
+Using Cargo:
+```bash
+cargo install uniqs
+```
+
 &nbsp;
 
 --------
