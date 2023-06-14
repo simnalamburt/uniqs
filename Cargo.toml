@@ -1,8 +1,10 @@
 [package]
 name = "uniqs"
+description = "uniq(1) alternative with streaming support"
 version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0 OR MIT"
+repository = "https://github.com/simnalamburt/uniqs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
