@@ -21,7 +21,7 @@ Options:
 ### Comparison with [`uniq(1)`]
 `... \| sort \| uniq` | `... \| uniqs` | `... \| uniqs -c`
 --------------|---------|------------
-![Video of the results when using sort-then-uniq](https://i.hyeon.me/uniqs/sort-then-uniq.avif) | ![Video of the results when using uniqs](https://i.hyeon.me/uniqs/uniqs.avif) | ![Video of the results when using uniqs with a count option](https://i.hyeon.me/uniqs/uniqs-c.avif)
+![Video of the results when using sort-then-uniq](https://i.hyeon.me/uniqs/sort-then-uniq.webp) | ![Video of the results when using uniqs](https://i.hyeon.me/uniqs/uniqs.webp) | ![Video of the results when using uniqs with a count option](https://i.hyeon.me/uniqs/uniqs-c.webp)
 
 
 ### Installation
