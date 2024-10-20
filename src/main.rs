@@ -2,7 +2,8 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{stdin, stdout, BufRead, BufReader, IsTerminal, Result, Write};
 
-use clap::Parser;
+use clap::{builder::ValueHint, CommandFactory, Parser, Subcommand};
+use clap_complete::{generate, Shell};
 use indexmap::IndexMap;
 
 /// uniq(1) alternative with streaming support
@@ -11,20 +12,44 @@ use indexmap::IndexMap;
 /// to OUTPUT. It ignores lines that have already appeared before. If INPUT is a single dash ('-')
 /// or absent, standard input is read. If OUTPUT is absent, the standard output is used for output.
 #[derive(Parser)]
-#[command(version, author)]
+#[command(version, author, args_conflicts_with_subcommands = true)]
 struct Args {
     /// Prefix lines by the number of occurrences
     #[arg(short, long)]
     count: bool,
 
     /// Path of the input file (default: stdin)
+    #[arg(value_hint = ValueHint::FilePath, allow_hyphen_values = true)]
     input: Option<String>,
     /// Path of the output file (default: stdout)
+    #[arg(value_hint = ValueHint::FilePath)]
     output: Option<String>,
+
+    /// Subcommands
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Generate shell completion script for specified shell
+    #[command(arg_required_else_help = true)]
+    Completion {
+        #[arg(value_enum)]
+        shell: Shell,
+    },
 }
 
 fn main() -> Result<()> {
     let args = Args::parse();
+
+    // Handle shell completion
+    if let Some(Commands::Completion { shell }) = args.command {
+        let mut cmd = Args::command();
+        let bin_name = env!("CARGO_PKG_NAME");
+        generate(shell, &mut cmd, bin_name, &mut stdout());
+        return Ok(());
+    }
 
     let mut input: Box<dyn BufRead> = match args.input {
         Some(path) if path != "-" => Box::new(BufReader::new(File::open(path)?)),
