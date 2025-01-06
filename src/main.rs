@@ -89,6 +89,8 @@ fn program(input: &mut dyn BufRead, output: &mut dyn Write) -> Result<()> {
 }
 
 fn count_interactive(input: &mut dyn BufRead, output: &mut dyn Write) -> Result<()> {
+    use std::time::{Duration, Instant};
+
     use crossterm::{
         cursor::MoveTo,
         style::Print,
@@ -98,37 +100,46 @@ fn count_interactive(input: &mut dyn BufRead, output: &mut dyn Write) -> Result<
 
     output.queue(EnterAlternateScreen)?.queue(DisableLineWrap)?;
 
-    let mut print = |row: usize, count: u64, key: &str| -> Result<()> {
-        // Do nothing if screen is not big enough for this print()
-        if row >= size()?.1 as usize {
-            return Ok(());
-        }
-
-        output
-            .queue(MoveTo(0, row as u16))?
-            .queue(Print(format!("{:>7} {}", count, key)))?;
-        output.flush()?;
-        Ok(())
-    };
-
     // line -> count of occurrences
     let mut map = IndexMap::new();
+
+    let mut last_rendered_time = Instant::now();
+    let mut last_rendered_size = 0;
+    let inverse_fps = Duration::from_millis(33); // 30 FPS
 
     for line in input.lines() {
         use indexmap::map::Entry;
         match map.entry(line?) {
             Entry::Vacant(e) => {
-                print(e.index(), 1, e.key())?;
-
                 e.insert(1);
             }
             Entry::Occupied(mut e) => {
                 let slot = e.get_mut();
                 let count = *slot + 1;
                 *slot = count;
-
-                print(e.index(), count, e.key())?;
             }
+        }
+
+        let now = Instant::now();
+        if now - last_rendered_time > inverse_fps {
+            for (row, (key, count)) in map.iter().enumerate() {
+                // Do nothing if screen is not big enough for this print()
+                if row >= size()?.1 as usize {
+                    break;
+                }
+
+                output.queue(MoveTo(0, row as u16))?.queue(Print(
+                    if row >= last_rendered_size {
+                        format!("{count:>7} {key}")
+                    } else {
+                        format!("{count:>7}")
+                    },
+                ))?;
+            }
+
+            last_rendered_time = now;
+            last_rendered_size = map.len();
+            output.flush()?;
         }
     }
 
